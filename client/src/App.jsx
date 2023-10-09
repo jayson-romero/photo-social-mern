@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import "./App.css"
 import Post from "./components/Post/Post"
+import ImageUpload from "./components/ImageUpload/ImageUpload"
 
 import {
 	auth,
@@ -61,7 +62,7 @@ function App() {
 				setUser(null)
 			}
 		})
-	}, [user])
+	}, [user, username])
 
 	const signUp = async (e) => {
 		e.preventDefault()
@@ -76,7 +77,7 @@ function App() {
 				console.log(userCred)
 			}
 		} catch (error) {
-			console.log(error.message)
+			alert(error.message)
 		}
 	}
 
@@ -89,7 +90,7 @@ function App() {
 				console.log(userCred)
 			}
 		} catch (error) {
-			console.log(error.message)
+			alert(error.message)
 		}
 	}
 
@@ -174,23 +175,32 @@ function App() {
 					src="https://banner2.cleanpng.com/20180720/zia/kisspng-react-javascript-library-web-development-vue-js-funding-icon-5b51604fbf7995.0841849115320597277843.jpg"
 					alt="Header"
 				/>
+
+				{user ? (
+					<Button onClick={() => auth.signOut()}>Logout</Button>
+				) : (
+					<div className="app__loginContainer">
+						<Button onClick={() => setOpenSignIn(true)}>Sign In</Button>
+						<Button onClick={() => setOpen(true)}>Sign Up</Button>
+					</div>
+				)}
 			</div>
-			{user ? (
-				<Button onClick={() => auth.signOut()}>Logout</Button>
+
+			<div className="app__posts">
+				{posts.map((post) => (
+					<Post
+						key={post.username}
+						username={post.username}
+						caption={post.caption}
+						imageUrl={post.imageUrl}
+					/>
+				))}
+			</div>
+			{user?.email ? (
+				<ImageUpload username={user.email} />
 			) : (
-				<div className="app__loginContainer">
-					<Button onClick={() => setOpenSignIn(true)}>Sign In</Button>
-					<Button onClick={() => setOpen(true)}>Sign Up</Button>
-				</div>
+				<h3 className="app__notLogin">Need to login to upload</h3>
 			)}
-			{posts.map((post) => (
-				<Post
-					key={post.username}
-					username={post.username}
-					caption={post.caption}
-					imageUrl={post.imageUrl}
-				/>
-			))}
 		</div>
 	)
 }
