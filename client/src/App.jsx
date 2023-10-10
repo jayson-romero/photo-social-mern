@@ -2,6 +2,11 @@ import { useEffect, useState } from "react"
 import "./App.css"
 import Post from "./components/Post/Post"
 import ImageUpload from "./components/ImageUpload/ImageUpload"
+import LoadingComponent from "./components/Loading/LoadingComponent"
+import ErrorComponent from "./components/Error/ErrorComponent"
+
+import axios from "./axios.js"
+import Pusher from "pusher-js"
 
 import {
 	auth,
@@ -30,20 +35,9 @@ const style = {
 function App() {
 	const [open, setOpen] = useState(false)
 	const [openSignIn, setOpenSignIn] = useState(false)
-	const [posts, setPosts] = useState([
-		{
-			username: "TWD",
-			caption: "Build a Messaging app with MERN Stack",
-			imageUrl:
-				"https://www.techlifediary.com/wp-content/uploads/2020/06/react-js.png",
-		},
-		{
-			username: "nabendu82",
-			caption: "Such a beautiful world",
-			imageUrl:
-				"https://quotefancy.com/media/wallpaper/3840x2160/126631-Charles-Dickens-Quote-And-a-beautiful-world-you-live-in-when-it-is.jpg",
-		},
-	])
+	const [posts, setPosts] = useState([])
+	const [loading, setLoading] = useState(false)
+	const [error, setError] = useState(false)
 
 	const [username, setUsername] = useState("")
 	const [email, setEmail] = useState("")
@@ -51,6 +45,7 @@ function App() {
 
 	const [user, setUser] = useState({})
 
+	// UserEffect for getting user
 	useEffect(() => {
 		onAuthStateChanged(auth, (currentUser) => {
 			if (currentUser) {
@@ -92,6 +87,43 @@ function App() {
 		} catch (error) {
 			alert(error.message)
 		}
+	}
+
+	// FETCH POSTS FUNCTION
+	const fetchPosts = async () => {
+		setLoading(true)
+		try {
+			const response = await axios.get("/sync")
+			setPosts(response.data)
+			setLoading(false)
+		} catch (error) {
+			console.log(error.message)
+			setLoading(false)
+			setError(error.message)
+		}
+	}
+
+	//FETCH POSTS
+	useEffect(() => {
+		fetchPosts()
+	}, [])
+
+	// USEEFFECT FOR PUSHER
+	useEffect(() => {
+		const pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY, {
+			cluster: "ap1",
+		})
+		const channel = pusher.subscribe("posts")
+		channel.bind("inserted", (data) => {
+			fetchPosts()
+		})
+	}, [])
+
+	if (loading) {
+		return <LoadingComponent />
+	}
+	if (error) {
+		return <ErrorComponent message={error} />
 	}
 
 	return (
@@ -187,14 +219,15 @@ function App() {
 			</div>
 
 			<div className="app__posts">
-				{posts.map((post) => (
-					<Post
-						key={post.username}
-						username={post.username}
-						caption={post.caption}
-						imageUrl={post.imageUrl}
-					/>
-				))}
+				{posts &&
+					posts.map((post) => (
+						<Post
+							key={post._id}
+							username={post.user}
+							caption={post.caption}
+							imageUrl={post.image}
+						/>
+					))}
 			</div>
 			{user?.email ? (
 				<ImageUpload username={user.email} />
