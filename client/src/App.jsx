@@ -117,6 +117,10 @@ function App() {
 		channel.bind("inserted", (data) => {
 			fetchPosts()
 		})
+		return () => {
+			channel.unbind_all()
+			channel.unsubscribe()
+		}
 	}, [])
 
 	if (loading) {
